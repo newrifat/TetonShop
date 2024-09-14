@@ -4,9 +4,7 @@ This project has been developed using Playwright, incorporating its Page Object 
 
 ## Table of Contents
 - Installation
-- Usage
-- Contributing
-- License
+- ENV file
 
 ## Installation
 
@@ -35,7 +33,20 @@ Install the dotenv package to manage environment variables:
 npm install dotenv
 ```
 
-You are all set! Now, run the following command in your terminal.
-```bash 
-npx playwright test in your terminal.
+You are all set! Now, run the following command in your terminal:
 
+```bash 
+npx playwright test
+```
+
+## ENV file
+
+In the project’s root directory, you may find a .env.sample file. Rename this file to .env and fill in the following details:
+
+```bash 
+DASHBOARD_URL= "enter the dashboard or admin URL, useful for verifying assertions"
+BASE_URL= "enter the project URL"
+USERNAME= "enter the username"
+PASSWORD= "enter the password"
+APP_NAME= "enter the application name, such as 'WP Dark Mode'"
+```
