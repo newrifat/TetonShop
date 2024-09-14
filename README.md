@@ -1,11 +1,11 @@
-# My Awesome Project
+# Assessment Project
 
 This project has been developed using Playwright, incorporating its Page Object Model feature.
 
 ## Table of Contents
 - Installation
 - ENV file
-
+- Run 
 ## Installation
 
 Clone the repository and install dependencies:
@@ -41,7 +41,7 @@ npx playwright test
 
 ## ENV file
 
-In the project’s root directory, you may find a .env.sample file. Rename this file to .env and fill in the following details:
+In the project’s root directory, you may find a .env.sample file. Rename the file to .env and add the following details:
 
 ```bash 
 DASHBOARD_URL= "enter the dashboard or admin URL, useful for verifying assertions"
@@ -50,3 +50,15 @@ USERNAME= "enter the username"
 PASSWORD= "enter the password"
 APP_NAME= "enter the application name, such as 'WP Dark Mode'"
 ```
+
+## Run the Test
+Open your terminal and navigate to your project directory. Run the test using the following command: 
+
+```bash 
+npx playwright test
+```
+By default, Playwright runs tests in headless mode (without a browser UI). To run tests in headed mode (with a browser UI), use the --headed flag:
+```bash 
+npx playwright test --headed
+```
+
