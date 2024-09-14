@@ -33,12 +33,6 @@ Install the dotenv package to manage environment variables:
 npm install dotenv
 ```
 
-You are all set! Now, run the following command in your terminal:
-
-```bash 
-npx playwright test
-```
-
 ## ENV file
 
 In the project’s root directory, you may find a .env.sample file. Rename the file to .env and add the following details:
