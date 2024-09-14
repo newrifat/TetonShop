@@ -6,6 +6,7 @@ export class DashboardPage {
 
   constructor(page: Page) {
     this.page = page;
+
     this.toastMessage = page
       .locator('div[class*="main-content-toast"]')
       .locator("span");
@@ -31,13 +32,16 @@ export class DashboardPage {
       hasText:
         "WP Dark Mode – WordPress Dark Mode Plugin for Improved Accessibility, Dark Theme, Night Mode, and Social Sharing",
     });
-    const activeButton = await cartInfo.getByRole("button", { name: "Active" });
+    
+    const button = await cartInfo.locator('[class*="button"]').last().textContent();
+    console.log(button)
 
-    if (await activeButton.isDisabled()) {
-      return;
+    if ( button === "Active") {
+        console.log("Plugin Active");
+        await this.navigateToWPDarkMode()
+        return;
     } else {
-      console.log("The button is not disabled.");
-      await this.installAndActivatePlugin(cartInfo);
+        await this.installAndActivatePlugin(cartInfo);
     }
   }
 
@@ -61,10 +65,9 @@ export class DashboardPage {
     );
   }
 
-  async installAndActivatePlugin(cartInfo) {
-    await cartInfo.getByRole("button", { name: "Install Now" }).click();
-    await this.page.waitForTimeout(30000);
-    await cartInfo.getByRole("button", { name: "Activate" }).click();
+  async installAndActivatePlugin(cartInfo: Locator) {
+    await cartInfo.locator('[class="install-now button"]').click();
+    await cartInfo.locator('[class*="activate-now"]').click();
   }
 
   async navigateToWPDarkMode() {
