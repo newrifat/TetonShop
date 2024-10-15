@@ -2,141 +2,176 @@ import { expect, Locator, Page } from "@playwright/test";
 
 export class DashboardPage {
   readonly page: Page;
-  readonly toastMessage: Locator;
+  readonly productCategory: Locator;
+  readonly products: Locator;
 
   constructor(page: Page) {
     this.page = page;
-
-    this.toastMessage = page
-      .locator('div[class*="main-content-toast"]')
-      .locator("span");
+    this.productCategory = page.locator('a[href="/discover/products"]');
+    this.products = page.locator('.p-tile-home');
   }
 
-  async navigateToPlugins() {
-    await this.page.getByRole("link", { name: "Plugins", exact: true }).click();
+  async navigateToProductPage() {
+    await this.productCategory.click();
+    await this.page.waitForLoadState("networkidle");
   }
 
-  async addNewPlugin() {
-    await this.page
-      .getByLabel("Main menu", { exact: true })
-      .getByRole("link", { name: "Add New Plugin" })
-      .click();
+
+  async addToCart() {
+    try {
+      const addToCartButton = this.page.locator('button[id="add-to-cart"]');
+      if (await addToCartButton.count() > 0) {
+        await addToCartButton.click();
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
   }
-
-  async searchPlugin(pluginName: string) {
-    await this.page.locator('input[id="search-plugins"]').fill(pluginName);
-  }
-
-  async activatePlugin() {
-    const cartInfo = this.page.locator('div[class="plugin-card-top"]').filter({
-      hasText:
-        "WP Dark Mode – WordPress Dark Mode Plugin for Improved Accessibility, Dark Theme, Night Mode, and Social Sharing",
-    });
-    
-    const button = await cartInfo.locator('[class*="button"]').last().textContent();
-    console.log(button)
-
-    if ( button === "Active") {
-        console.log("Plugin Active");
-        await this.navigateToWPDarkMode()
+  
+  async addItemsToCart() {
+    try {
+      const count = await this.products.count();
+      let productWithoutDiscountFound = false;
+  
+      for (let i = 0; i < count; i++) {
+        try {
+          const product = this.products.nth(i);
+          const discountCount = await product.locator('.discount').count();
+  
+          if (discountCount === 0) {
+            productWithoutDiscountFound = true;
+            await product.click();
+            await this.addToCart();
+            await this.page.goBack();
+            await this.page.waitForLoadState('networkidle');
+          }
+        } catch (innerError) {
+          console.error(`Error processing product at index ${i}:`, innerError);
+        }
+      }
+  
+      if (!productWithoutDiscountFound) {
+        console.log('No products without discounts found.');
         return;
-    } else {
-        await this.installAndActivatePlugin(cartInfo);
+      }
+    } catch (error) {
+      console.error('Error adding items to cart:', error);
     }
   }
 
-  async enableDarkMode() {
-    await this.page
-      .getByRole("link", { name: "Admin Panel Dark Mode" })
-      .click();
-    await this.page
-      .locator("label")
-      .filter({ hasText: "Enable Admin Dashboard Dark" })
-      .locator("div")
-      .first()
-      .click();
-    await this.page.getByRole("button", { name: "Save Changes" }).click();
-    await expect(this.toastMessage).toContainText("Saved Successfully");
-    await this.toastMessage.waitFor({ state: 'hidden' });
-    await this.page.locator("span").filter({ hasText: "Dark" }).click();
-    await expect(this.page.locator('div[id="wpbody"]')).toHaveCSS(
-      "background-color",
-      "rgb(39, 40, 39)"
-    );
+  async navigateToSupportPage() {
+    try {
+      await this.page.hover('div.parent_nav_link:has-text("Support")');
+
+      const [newPage] = await Promise.all([
+        this.page.waitForEvent("popup"),
+        this.page.click('a[href="https://auth.tetonelectronics.com/"]'),
+      ]);
+
+      console.log("Navigated to the new page:", newPage.url());
+
+      const titleContext = await newPage
+        .getByRole("heading", { name: "Product Verification" })
+        .textContent();
+      await expect(titleContext).toContain("Product Verification");
+
+      await newPage.fill('input[name="serial_number"]', "rifat");
+      await newPage.click('input[type="submit"][value="Verify"]');
+
+      const errorMsg = await newPage
+        .locator('div[class="overlay-form"]')
+        .locator('div[id="validationMsg"]')
+        .locator("p")
+        .textContent();
+      await expect(errorMsg).toContain(
+        "We are sorry to inform you that the product you have purchased is not official product."
+      );
+
+      // await this.page.pause();
+    } catch (error) {
+      console.error("Error navigating to support page:", error);
+    }
   }
 
-  async installAndActivatePlugin(cartInfo: Locator) {
-    await cartInfo.locator('[class="install-now button"]').click();
-    await cartInfo.locator('[class*="activate-now"]').click();
+
+  async findAndProduct(productName: string) {
+    try {
+      const productContainers = await this.page
+        .locator('div[class="tile-container"]')
+        .locator('div[class="p-tile p-tile-home"]')
+        .locator('div[class="item-title item__details"]');
+  
+      const productCount = await productContainers.count();
+  
+      for (let i = 0; i < productCount; i++) {
+        try {
+          const productElement = productContainers.nth(i).locator("h5");
+          const productTitle = await productElement.textContent();
+  
+          if (productTitle) {
+            const trimmedTitle = productTitle.trim();
+            console.log(trimmedTitle);
+            if (trimmedTitle === productName) {
+              console.log("hi");
+              await productContainers.nth(i).click();
+              await this.page.getByLabel("Add to cart").click();
+              await this.page.getByRole("link", { name: "Cart" }).click();
+              break;
+            }
+          }
+        } catch (innerError) {
+          console.error(`Error processing product at index ${i}:`, innerError);
+        }
+      }
+    } catch (error) {
+      console.error('Error finding products:', error);
+    }
   }
 
-  async navigateToWPDarkMode() {
-    await this.page
-      .getByRole("link", { name: "WP Dark Mode", exact: true })
-      .click();
-  }
-
-  async goToCustomization() {
-    await this.page.getByRole("heading", { name: "Customization" }).click();
-  }
-
-  async switchStyle() {
-    await this.page.getByRole("link", { name: "Switch Settings" }).click();
-    await this.page
-      .locator("div")
-      .filter({ hasText: /^LightDark$/ })
-      .first()
-      .click();
-    await this.page.getByRole("button", { name: "Save Changes" }).click();
-    await expect(this.toastMessage).toContainText("Saved Successfully");
-    await this.toastMessage.waitFor({ state: 'hidden' });
-  }
-
-  async selectCustomAndFill() {
-    await this.page.getByRole("link", { name: "Switch Settings" }).click();
-    await this.page
-      .locator("div")
-      .filter({ hasText: /^Custom$/ })
-      .locator("span")
-      .click();
-    await this.page.getByRole("spinbutton").fill("220");
-  }
-
-  async selectLeft() {
-    await this.page.getByRole("link", { name: "Switch Settings" }).click();
-    await this.page.getByText("Left").click();
-    await this.page.getByRole("button", { name: "Save Changes" }).click();
-    await expect(this.toastMessage).toContainText("Saved Successfully");
-    await this.toastMessage.waitFor({ state: 'hidden' });
-  }
-
-  async enableKeyboardShortcut() {
-    await this.page.getByRole("link", { name: "Switch Settings" }).click();
-    await this.page
-      .getByRole("link", { name: "Accessibility", exact: true })
-      .click();
-    await this.page
-      .locator("label")
-      .filter({ hasText: "Keyboard Shortcut" })
-      .locator("div")
-      .first()
-      .click();
-    await this.page.getByRole("button", { name: "Save Changes" }).click();
-    await expect(this.toastMessage).toContainText("Saved Successfully");
-    await this.toastMessage.waitFor({ state: 'hidden' });
-  }
-
-  async enablePageTransitionAnimation() {
-    await this.page.getByRole("link", { name: "Site Animation" }).click();
-    await this.page
-      .locator("label")
-      .filter({ hasText: "Enable Page Transition Animation" })
-      .locator("div")
-      .first()
-      .click();
-    await this.page.locator("span").filter({ hasText: "Roll" }).click();
-    await this.page.getByRole("button", { name: "Save Changes" }).click();
-    await expect(this.toastMessage).toContainText("Saved Successfully");
-    await this.toastMessage.waitFor({ state: 'hidden' });
+  async shoppingCart() {
+    try {
+      const item = await this.page
+        .locator('div[class="grow"]').locator('h6')
+        .locator("span")
+        .first()
+        .textContent();
+  
+      if (item) {
+        console.log(item);
+  
+        const [pricePart, discountPart] = item.split("(");
+        const price = parseFloat(pricePart.trim().replace("৳", "").replace(/,/g, ""));
+        const discount = parseFloat(discountPart.trim().replace("% offer)", ""));
+  
+        console.log(`Price: ${price}`);
+        console.log(`Discount: ${discount}`);
+  
+        const afterDiscountPriceText = await this.page
+          .locator('h5[class="price inl-b-sm"]')
+          .locator("span")
+          .first()
+          .textContent();
+  
+        if (afterDiscountPriceText) {
+          const afterDiscountPrice = parseFloat(
+            afterDiscountPriceText.trim().replace("৳", "").replace(/,/g, "")
+          );
+          console.log(`After Discount Price: ${afterDiscountPrice}`);
+  
+          const expectedAfterDiscountPrice = price * (1 - discount / 100);
+          console.log(
+            `Expected After Discount Price: ${expectedAfterDiscountPrice}`
+          );
+  
+          await expect(afterDiscountPrice).toBeCloseTo(expectedAfterDiscountPrice, 2);
+        } else {
+          console.log("After Discount Price is null");
+        }
+      } else {
+        console.log("Item is null");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    }
   }
 }

@@ -7,34 +7,29 @@ dotenv.config();
 const baseUrl = process.env.BASE_URL;
 const username = process.env.USERNAME;
 const password = process.env.PASSWORD;
-const appName = process.env.APP_NAME;
+const productName = process.env.PROD_NAME;
 
-WPTest.describe("Assesment Test", () => {
+WPTest.describe("Assessment Test", () => {
   WPTest.beforeEach(async ({ page, toLoginPage }) => {
     await page.goto(baseUrl || "");
+    // await page.goto('https://bdshop.tetonelectronics.com/login');
     await toLoginPage.login(username || "", password || "");
   });
 
-  WPTest("Check Plugin Status", async ({ toDashboardPage }) => {
-    await toDashboardPage.navigateToPlugins();
-    await toDashboardPage.addNewPlugin();
-    await toDashboardPage.searchPlugin(appName || "");
-    await toDashboardPage.activatePlugin();
+  WPTest('Product Discount Checking', async ({ page, toDashboardPage }) => {
+    await toDashboardPage.navigateToProductPage();
+    await toDashboardPage.addItemsToCart();
   });
 
-  WPTest("Check Dark Mode", async ({ toDashboardPage }) => {
-    await toDashboardPage.navigateToWPDarkMode();
-    await toDashboardPage.enableDarkMode();
-    
-  });
 
-  WPTest("Change Plugin Settings", async ({ toDashboardPage }) => {
-    await toDashboardPage.navigateToWPDarkMode();
-    await toDashboardPage.goToCustomization();
-    await toDashboardPage.switchStyle();
-    await toDashboardPage.selectCustomAndFill();
-    await toDashboardPage.selectLeft();
-    await toDashboardPage.enableKeyboardShortcut();
-    await toDashboardPage.enablePageTransitionAnimation();
+  WPTest('Product Selection', async ({ page, toDashboardPage }) => {
+    await toDashboardPage.navigateToProductPage();
+    await toDashboardPage.findAndProduct(productName || "");
+    await toDashboardPage.shoppingCart();
+   });
+
+
+  WPTest('Product Authentication', async ({ page, toDashboardPage }) => {
+    await toDashboardPage.navigateToSupportPage();
   });
 });
